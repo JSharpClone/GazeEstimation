@@ -82,7 +82,6 @@ class FaceGazeDataset(Dataset):
         img_path = os.path.join(subject_path, annotation[0])
         img = Image.open(img_path)
         img = img.convert('RGB').resize(self.img_size)
-        img.save('out.png')
         img = tf.to_tensor(img)
 
         w, h = screen_size[subject_idx]
