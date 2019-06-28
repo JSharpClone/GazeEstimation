@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from data import FaceGazeDataset
+from data import Face2DGazeDataset, Face3DGazeDataset
 
 class Model(nn.Module):
 
@@ -28,7 +28,7 @@ class Model(nn.Module):
 
 if __name__ == '__main__':
     root = '/mnt/data/MPII/MPIIFaceGaze/'
-    dataset = FaceGazeDataset(root, 0, mode='validation')
+    dataset = Face3DGazeDataset(root, 0, mode='validation')
     img, label = dataset[2000]
     img = img.unsqueeze(0)
     

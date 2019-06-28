@@ -1,10 +1,13 @@
 import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
+
 import numpy as np
 import os
 from torchvision.transforms import functional as tf
 from PIL import Image
+import h5py
+import cv2
 
 subject_num = 15 
 subject_instance = [2927,
@@ -42,9 +45,9 @@ screen_size = [(1280, 800),
 
 
 
-class FaceGazeDataset(Dataset):
+class Face2DGazeDataset(Dataset):
     def __init__(self, data_root, test_idx, mode='train', img_size=(224, 224)):
-        super(FaceGazeDataset, self).__init__()
+        super(Face2DGazeDataset, self).__init__()
         self.data_root = data_root
         self.mode = mode
         self.test_idx = test_idx
@@ -93,9 +96,48 @@ class FaceGazeDataset(Dataset):
     def __len__(self):
         return self.data_len
 
+class Face3DGazeDataset(Dataset):
+    def __init__(self, data_root, test_idx, mode='train', img_size=(224, 224)):
+        super(Face3DGazeDataset, self).__init__()
+        self.data_root = data_root
+        self.test_idx = test_idx
+        self.mode = mode
+        self.img_size = img_size
+        self.subject_num = 15
+        self.subject_instance = 3000
+
+        self.indices = list(range(self.subject_num*self.subject_instance))
+        del self.indices[test_idx*self.subject_instance : (test_idx+1)*self.subject_instance]
+            
+    
+    def __getitem__(self, idx):
+        idx = self.indices[idx]
+        subject_idx = idx // self.subject_instance
+        instance_idx = idx % self.subject_instance
+
+        subject_path = os.path.join(self.data_root, 'p{:02d}.mat'.format(subject_idx))
+        with h5py.File(subject_path, 'r') as data:
+            img = data['Data']['data'][instance_idx]
+            label = data['Data']['label'][instance_idx][:2]
+        
+        img = Image.fromarray(img[:, :, ::-1], mode='RGB')
+        img = img.convert('RGB').resize(self.img_size)
+        img = tf.to_tensor(img)
+        label = torch.FloatTensor(label)
+
+        return img, label
+
+    def __len__(self):
+        return len(self.indices)
+
 if __name__ == '__main__':
-    root = '/mnt/data/MPII/MPIIFaceGaze/'
-    dataset = FaceGazeDataset(root, 0, mode='validation')
-    img, label = dataset[2000]
+    # root = '/mnt/data/MPII/MPIIFaceGaze/'
+    # dataset = Face2DGazeDataset(root, 0, mode='validation')
+    # img, label = dataset[2000]
     # print(img.size())
-    # print(len(dataset))
+    # print(len(dataset)) 
+    root = '/mnt/data/MPII/MPIIFaceGaze_normalized/'
+    dataset = Face3DGazeDataset(root, 0, mode='train')
+    img, label = dataset[0]
+    print(img)
+    
